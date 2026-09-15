@@ -34,7 +34,7 @@ The final MCTS implementation also includes later refinements made by other team
 
 ```text
 algorithms/
-    mcst.py         # Monte Carlo Tree Search
+    mcts.py         # Monte Carlo Tree Search
     minmax.py       # Minimax and alpha-beta pruning
     tournament.py   # Matchups and performance benchmarks
 
