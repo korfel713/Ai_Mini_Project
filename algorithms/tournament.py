@@ -2,13 +2,13 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from tictactoe.tic_tac_toe import TicTacAssignment
-from algorithms.mcst import mcst, expand
+from algorithms.mcts import mcts, expand
 from algorithms.minmax import minimax, minimax_ab
 
 with TicTacAssignment(render_mode = 'ansi') as env:
     env.reset()
-    # tree = mcst(env, 50000)
-    tree = mcst(env, 100)
+    # tree = mcts(env, 50000)
+    tree = mcts(env, 100)
 
 print('tree compiled')
 
@@ -18,8 +18,8 @@ def minimax_agent(state):
 def alphabeta_agent(state):
     return minimax_ab(state)
 
-# def mcst_agent(state, iterations=1000):
-#     return mcst(state, iterations=iterations)
+# def mcts_agent(state, iterations=1000):
+#     return mcts(state, iterations=iterations)
 
 def random_agent(state):
     return np.random.choice(state.get_legal_moves())
@@ -45,19 +45,19 @@ def play_game(agent_X, agent_O, verbose=False):
             state.render()
     return state.utility()
 
-def play_with_mcst(agent_X, agent_O, verbose=False):
+def play_with_mcts(agent_X, agent_O, verbose=False):
     state = TicTacAssignment(render_mode='ansi')
     state.reset()
     traversal = tree
-    mcst_player = 1 if agent_X == mcst else 0 if agent_O == mcst else -1
+    mcts_player = 1 if agent_X == mcts else 0 if agent_O == mcts else -1
     while not state.is_terminal():
-        if state.current_player == 1 and mcst_player == 1:
-            traversal = mcst(state, 5000, traversal).best_child(f='flat')
+        if state.current_player == 1 and mcts_player == 1:
+            traversal = mcts(state, 5000, traversal).best_child(f='flat')
             move = traversal.move
-        elif state.current_player == 0 and mcst_player == 0:
-            traversal = mcst(state, 5000, traversal).best_child(f='flat')
+        elif state.current_player == 0 and mcts_player == 0:
+            traversal = mcts(state, 5000, traversal).best_child(f='flat')
             move = traversal.move
-        elif state.current_player == 1 and mcst_player == 0:
+        elif state.current_player == 1 and mcts_player == 0:
             move = agent_X(state)
             if move in traversal.untried_moves:
                 traversal = expand(traversal, move)
@@ -78,9 +78,9 @@ def play_with_mcst(agent_X, agent_O, verbose=False):
 def run_tournament(num_games=100, verbose=False):
     matchups = [
         ("Minimax", minimax_agent, "Random", random_agent),
-        ("mcst_1000", mcst, "Random", random_agent),
-        ("Minimax", minimax_agent, "mcst_1000", mcst),
-        ("mcst_1000", mcst, "Minimax", minimax_agent),
+        ("mcts_1000", mcts, "Random", random_agent),
+        ("Minimax", minimax_agent, "mcts_1000", mcts),
+        ("mcts_1000", mcts, "Minimax", minimax_agent),
     ]
     results = {}
 
@@ -90,7 +90,7 @@ def run_tournament(num_games=100, verbose=False):
         for game_idx in range(num_games):
             if verbose:
                 print(f"Game {game_idx+1} | {key}")
-            outcome = play_with_mcst(X_agent, O_agent, verbose=verbose)
+            outcome = play_with_mcts(X_agent, O_agent, verbose=verbose)
             if outcome == 1:
                 results[key]["X_wins"] += 1
             elif outcome == -1:
@@ -124,8 +124,8 @@ def benchmark_agents_time(agents, games=5):
         avg_time = np.mean(move_times)
         print(f"{name}: avg time per move = {avg_time:.4f} s")
 
-def benchmark_mcst_iterations(iterations_list, games=5):
-    """Measure average time per move for mcst at different iteration counts."""
+def benchmark_mcts_iterations(iterations_list, games=5):
+    """Measure average time per move for mcts at different iteration counts."""
     times = {}
     for iters in iterations_list:
         move_times = []
@@ -135,24 +135,24 @@ def benchmark_mcst_iterations(iterations_list, games=5):
             traversal = tree
             while not state.is_terminal():
                 start = time.time()
-                traversal = mcst(state,iters,traversal).best_child(f='flat')
+                traversal = mcts(state,iters,traversal).best_child(f='flat')
                 move = traversal.move
                 end = time.time()
                 move_times.append(end - start)
                 state = state.make_move(move)
         avg_time = np.mean(move_times)
         times[iters] = avg_time
-        print(f"mcst {iters} iterations: avg {avg_time:.4f} s per move")
+        print(f"mcts {iters} iterations: avg {avg_time:.4f} s per move")
     return times
 
-def plot_mcst_times(times_dict):
+def plot_mcts_times(times_dict):
     iters = list(times_dict.keys())
     times = list(times_dict.values())
     plt.figure(figsize=(8,5))
     plt.plot(iters, times, marker='o')
-    plt.xlabel("mcst Iterations")
+    plt.xlabel("mcts Iterations")
     plt.ylabel("Average Time per Move (s)")
-    plt.title("mcst: Iterations vs Time per Move")
+    plt.title("mcts: Iterations vs Time per Move")
     plt.grid(True)
     plt.show()
 
@@ -164,9 +164,9 @@ if __name__ == "__main__":
     # print_tournament_results(results, NUM_GAMES)
 
     # # Show one game visually
-    # print("\nSample Game (Minimax X vs mcst 1000 O):")
-    # # play_game(minimax_agent, lambda s, tree: mcst(s, 1000, tree), verbose=True)
-    # play_with_mcst(minimax_agent, mcst, verbose=True)
+    # print("\nSample Game (Minimax X vs mcts 1000 O):")
+    # # play_game(minimax_agent, lambda s, tree: mcts(s, 1000, tree), verbose=True)
+    # play_with_mcts(minimax_agent, mcts, verbose=True)
 
     # Benchmark Minimax, Alpha-Beta, Random
     agent_list = [
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     ]
     benchmark_agents_time(agent_list, games=5)
 
-    # Benchmark mcst at different iteration counts
+    # Benchmark mcts at different iteration counts
     iterations_list = [100, 500, 1000, 5000, 10000]
-    times = benchmark_mcst_iterations(iterations_list, games=5)
-    plot_mcst_times(times)
+    times = benchmark_mcts_iterations(iterations_list, games=5)
+    plot_mcts_times(times)
